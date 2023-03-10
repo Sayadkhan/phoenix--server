@@ -2,7 +2,6 @@ const userModel = require("../models/userMode;");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const validator = require("validator");
-const { json } = require("express");
 
 // generate token
 const createToken = (_id) => {
@@ -17,7 +16,7 @@ const registerUser = async (req, res) => {
     const exist = await userModel.findOne({ email });
 
     if (exist) {
-      return res.status(400), json("email already exist");
+      return res.status(400).json("email already exist");
     }
 
     if (!name || !email || !password) {
@@ -42,7 +41,9 @@ const registerUser = async (req, res) => {
     // creat a tokan
     const tokan = createToken(user._id);
 
-    res.status(200), json({ _id: user._id, name, email, password, tokan });
+    res
+      .status(200)
+      .json({ _id: user._id, name, email, password: user.password, tokan });
   } catch (err) {
     console.log(err);
     res.status(500).json(err);
