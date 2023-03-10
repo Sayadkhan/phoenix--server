@@ -2,6 +2,7 @@ const userModel = require("../models/userMode;");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const validator = require("validator");
+const mongoose = require("mongoose");
 
 // generate token
 const createToken = (_id) => {
@@ -10,9 +11,8 @@ const createToken = (_id) => {
 
 // register user
 const registerUser = async (req, res) => {
+  const { name, email, password } = req.body;
   try {
-    const { name, email, password } = req.body;
-
     const exist = await userModel.findOne({ email });
 
     if (exist) {
@@ -50,4 +50,52 @@ const registerUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser };
+// loginuser
+const loginUser = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return res.status(400).json("Inalid email or password.");
+    }
+    // comparing password
+
+    const isValidPass = await bcrypt.compare(password, user.password);
+
+    if (!isValidPass) {
+      return res.status(400).json("incorrect password");
+    }
+    // creat token
+    const token = createToken(user._id);
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email,
+      password: user.password,
+      token,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  }
+};
+
+// find an user
+const findUser = async (req, res) => {
+  const { userId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json("invalide id");
+  }
+  try {
+    const user = await userModel.findById(userId);
+
+    res.status(200).json(user);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  }
+};
+
+module.exports = { registerUser, loginUser, findUser };
